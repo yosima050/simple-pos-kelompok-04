@@ -18,6 +18,11 @@ return this.cart.reduce((sum, item) => sum + item.price, 0);
          :class="selectedProductId === {{ $product->id }} ? 'ring-2 ring-blue-500' : ''"
              @click="selectedProductId = {{ $product->id }}; addToCart({{ $product->id }}, '{{ $product->name }}', {{ $product->price }})">
             <p class="font-medium">{{ $product->name }}</p>
+            @if ($product->stock < 10)
+                <span class="bg-amber-100 text-amber-700 text-xs px-2 py-1 rounded">
+                    Stok Menipis
+                </span>
+            @endif
             <p class="text-sm text-slate-500">Rp {{ number_format($product->price) }}</p>
         </div>
     @endforeach
