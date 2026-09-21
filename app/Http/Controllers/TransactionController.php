@@ -18,10 +18,10 @@ public function store()
 {
 return 'Transaksi disimpan (belum ada logika penyimpanan)';
 }
-public function index()
-{
-return 'Daftar transaksi';
-}
+    public function index()
+    {
+        return view('transactions.index');
+    }
 public function show(string $id)
 {
 return "Detail transaksi #{$id}";
