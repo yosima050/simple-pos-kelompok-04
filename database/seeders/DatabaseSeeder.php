@@ -44,6 +44,7 @@ class DatabaseSeeder extends Seeder
                     'name' => fake()->words(3, true),
                     'price' => fake()->numberBetween(5000, 100000),
                     'stock' => fake()->numberBetween(0, 100),
+                    'is_active' => fake()->boolean(90),
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];
