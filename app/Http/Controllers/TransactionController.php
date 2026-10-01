@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Models\Transaction;
 
 class TransactionController extends Controller
 {
@@ -21,7 +22,11 @@ class TransactionController extends Controller
 
     public function index()
     {
-        return 'Daftar transaksi';
+        $transactions = Transaction::with('details.product')
+            ->latest()
+            ->paginate(15);
+
+        return view('transactions.index', compact('transactions'));
     }
 
     public function show(string $id)
