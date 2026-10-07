@@ -10,6 +10,8 @@ use App\Models\TransactionDetail;
 
 class Product extends Model
 {
+    protected $fillable = ['category_id', 'name', 'price', 'stock'];
+
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
