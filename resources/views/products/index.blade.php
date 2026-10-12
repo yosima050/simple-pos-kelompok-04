@@ -1,3 +1,4 @@
+```php
 @extends('layouts.app')
 
 @section('title', 'Produk')
@@ -12,9 +13,11 @@
     </div>
 @endif
 
-<a href="{{ route('products.create') }}" class="inline-block mb-4 bg-blue-600 text-white px-4 py-2 rounded-md">Tambah Produk</a>
+<a href="{{ route('products.create') }}"
+   class="inline-block mb-4 bg-blue-600 text-white px-4 py-2 rounded-md">
+    Tambah Produk
+</a>
 
-<table class="w-full text-left border-collapse">
 <table class="w-full text-left border-collapse">
     <thead>
         <tr class="border-b">
@@ -22,6 +25,7 @@
             <th class="py-2 pr-4">Kategori</th>
             <th class="py-2 pr-4">Harga</th>
             <th class="py-2 pr-4">Stok</th>
+            <th class="py-2 pr-4">Aksi</th>
         </tr>
     </thead>
 
@@ -32,6 +36,12 @@
                 <td class="py-2 pr-4">{{ $product->category->name }}</td>
                 <td class="py-2 pr-4">Rp {{ number_format($product->price) }}</td>
                 <td class="py-2 pr-4">{{ $product->stock }}</td>
+                <td class="py-2 pr-4">
+                    <a href="{{ route('products.edit', $product->id) }}"
+                       class="inline-block bg-yellow-500 text-white px-3 py-1 rounded-md">
+                        Edit
+                    </a>
+                </td>
             </tr>
         @endforeach
     </tbody>
@@ -42,3 +52,4 @@
 </div>
 
 @endsection
+```
