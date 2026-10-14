@@ -57,3 +57,9 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+## Validasi Total Transaksi
+
+Validasi `numeric` pada field `total` tidak cukup untuk mencegah manipulasi total transaksi. Aturan tersebut hanya memastikan bahwa nilai yang dikirim berupa angka, tetapi tidak memastikan bahwa jumlahnya benar. Pengguna masih bisa mengubah nilai total melalui browser sebelum mengirimkan form.
+
+Untuk mencegah manipulasi, total transaksi harus dihitung ulang di sisi server berdasarkan harga produk yang tersimpan di database dan jumlah barang yang dibeli. Dengan begitu, server tidak langsung mempercayai nilai total yang dikirim dari form, sehingga hasil perhitungan transaksi lebih aman dan sesuai dengan data produk.
