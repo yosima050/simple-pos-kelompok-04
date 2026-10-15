@@ -9,99 +9,74 @@ use Illuminate\Support\Facades\DB;
 
 class DatabaseSeeder extends Seeder
 {
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        // Membuat 1 user untuk data transaksi
+        $this->call(DemoUserSeeder::class);
+
         $user = User::factory()->create([
             'name' => 'Test User',
             'email' => 'test@example.com',
         ]);
 
-        // Membuat 4 kategori produk
-        $categories = collect([
-            'Makanan',
-            'Minuman',
-            'Snack',
-            'Lainnya',
-        ])->mapWithKeys(function ($name) {
-            $category = Category::create([
-                'name' => $name,
-            ]);
+        $categoryIds = collect(['Makanan', 'Minuman', 'Snack', 'Lainnya'])
+            ->map(fn (string $name) => Category::create(['name' => $name])->id)
+            ->all();
 
-            return [$name => $category->id];
-        });
-
-        // Membuat 300 produk
         $products = [];
 
-        foreach ($categories as $categoryId) {
-            for ($i = 1; $i <= 75; $i++) {
+        foreach ($categoryIds as $categoryId) {
+            for ($i = 0; $i < 75; $i++) {
                 $products[] = [
                     'category_id' => $categoryId,
-                    'name' => fake()->words(3, true),
-                    'price' => fake()->numberBetween(5000, 100000),
-                    'stock' => fake()->numberBetween(0, 100),
-                    'is_active' => fake()->boolean(90),
+                    'name' => fake()->words(2, true),
+                    'price' => fake()->numberBetween(3000, 50000),
+                    'stock' => fake()->numberBetween(0, 200),
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];
             }
         }
 
-        // Insert produk secara batch 50 data
         foreach (array_chunk($products, 50) as $chunk) {
             DB::table('products')->insert($chunk);
         }
 
-        // Ambil ID dan harga produk
-        $productPrices = DB::table('products')
-            ->pluck('price', 'id');
+        $productPrices = DB::table('products')->pluck('price', 'id');
+        $productIds = $productPrices->keys()->all();
 
-        // Membuat 2500 transaksi
-        for ($i = 1; $i <= 2500; $i++) {
-            DB::transaction(function () use ($user, $productPrices) {
+        for ($t = 0; $t < 2500; $t++) {
+            DB::transaction(function () use ($user, $productIds, $productPrices) {
+                $itemCount = fake()->numberBetween(1, 4);
+                $total = 0;
+                $details = [];
+
+                for ($i = 0; $i < $itemCount; $i++) {
+                    $productId = fake()->randomElement($productIds);
+                    $qty = fake()->numberBetween(1, 3);
+                    $subtotal = $productPrices[$productId] * $qty;
+                    $total += $subtotal;
+
+                    $details[] = [
+                        'product_id' => $productId,
+                        'qty' => $qty,
+                        'subtotal' => $subtotal,
+                    ];
+                }
+
                 $transactionId = DB::table('transactions')->insertGetId([
                     'user_id' => $user->id,
-                    'total' => 0,
+                    'total' => $total,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
 
-                // Setiap transaksi memiliki 1-4 produk
-                $numberOfItems = fake()->numberBetween(1, 4);
-
-                $selectedProducts = $productPrices
-                    ->keys()
-                    ->random($numberOfItems);
-
-                $total = 0;
-
-                foreach ($selectedProducts as $productId) {
-                    $qty = fake()->numberBetween(1, 5);
-                    $price = $productPrices[$productId];
-                    $subtotal = $qty * $price;
-
-                    DB::table('transaction_details')->insert([
-    'transaction_id' => $transactionId,
-    'product_id' => $productId,
-    'qty' => $qty,
-    'subtotal' => $subtotal,
-    'created_at' => now(),
-    'updated_at' => now(),
-]);
-
-                    $total += $subtotal;
+                foreach ($details as &$detail) {
+                    $detail['transaction_id'] = $transactionId;
+                    $detail['created_at'] = now();
+                    $detail['updated_at'] = now();
                 }
 
-                DB::table('transactions')
-                    ->where('id', $transactionId)
-                    ->update([
-                        'total' => $total,
-                        'updated_at' => now(),
-                    ]);
+                DB::table('transaction_details')->insert($details);
             });
         }
     }
