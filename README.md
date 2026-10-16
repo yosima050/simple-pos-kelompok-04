@@ -63,3 +63,66 @@ The Laravel framework is open-sourced software licensed under the [MIT license](
 Validasi `numeric` pada field `total` tidak cukup untuk mencegah manipulasi total transaksi. Aturan tersebut hanya memastikan bahwa nilai yang dikirim berupa angka, tetapi tidak memastikan bahwa jumlahnya benar. Pengguna masih bisa mengubah nilai total melalui browser sebelum mengirimkan form.
 
 Untuk mencegah manipulasi, total transaksi harus dihitung ulang di sisi server berdasarkan harga produk yang tersimpan di database dan jumlah barang yang dibeli. Dengan begitu, server tidak langsung mempercayai nilai total yang dikirim dari form, sehingga hasil perhitungan transaksi lebih aman dan sesuai dengan data produk.
+
+
+## Skenario Pengujian Manual
+
+### 1. Pengujian Role Admin
+
+**Langkah Pengujian:**
+
+1. Buka halaman login `/login`.
+2. Login menggunakan email `admin@pos.test` dan password `password`.
+3. Buka halaman `/pos`, `/products`, `/transactions`, dan `/categories`.
+
+**Hasil yang Diharapkan:**
+
+- Admin berhasil login.
+- Admin dapat mengakses halaman POS, produk, transaksi, dan kategori.
+
+**Hasil Pengujian:**
+
+- Halaman POS berhasil dibuka.
+- Halaman produk berhasil dibuka, tetapi data produk masih kosong.
+- Halaman kategori mengalami error View [categories.index] not found karena file tampilan kategori belum tersedia.
+- Akses halaman transaksi admin perlu dipastikan melalui pengujian langsung.
+
+### 2. Pengujian Role Kasir
+
+**Langkah Pengujian:**
+
+1. Logout dari akun sebelumnya.
+2. Buka halaman login `/login`.
+3. Login menggunakan email `kasir@pos.test` dan password `password`.
+4. Buka halaman `/pos`.
+5. Buka halaman `/transactions`.
+6. Buka halaman `/products`.
+
+**Hasil yang Diharapkan:**
+
+- Kasir berhasil login dan dapat mengakses halaman POS.
+- Kasir tidak dapat mengakses halaman transaksi, produk, dan kategori yang dibatasi untuk role lain.
+
+**Hasil Pengujian:**
+
+- Halaman POS berhasil dibuka.
+- Akses `/transactions` ditolak dengan status 403 dan pesan bahwa halaman hanya untuk admin atau manager.
+- Akses `/products` ditolak dengan status 403 dan pesan bahwa halaman hanya untuk admin.
+
+### 3. Pengujian Role Manager
+
+**Langkah Pengujian:**
+
+1. Login menggunakan akun yang memiliki role `manager`.
+2. Buka halaman `/transactions`.
+3. Buka halaman `/products`.
+
+**Hasil yang Diharapkan:**
+
+- Manager berhasil login.
+- Manager dapat mengakses halaman transaksi.
+- Manager tidak dapat mengakses halaman produk.
+
+**Status Pengujian:**
+
+- Belum diuji secara langsung karena akun demo manager belum tersedia pada `DemoUserSeeder` yang diperiksa.
