@@ -21,6 +21,11 @@
            class="hover:underline {{ request()->routeIs('categories.*') ? 'text-amber-400 font-semibold underline' : '' }}">
             Kategori
         </a>
+        
+        <a href="{{ route('reports.index') }}"
+           class="hover:underline {{ request()->routeIs('reports.*') ? 'text-amber-400 font-semibold underline' : '' }}">
+            Laporan
+        </a>
     @endif
 
     <span class="ml-auto text-sm">
