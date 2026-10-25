@@ -4,47 +4,59 @@
 @section('title', 'Laporan Penjualan')
 
 @section('content')
-<h1 class="text-lg font-semibold mb-4">Laporan Penjualan</h1>
+    <h1 class="text-2xl font-bold mb-6">Laporan Penjualan</h1>
 
-<form method="GET" action="{{ route('reports.index') }}"
-    class="flex flex-wrap gap-3 items-end mb-6">
+    <form method="GET" action="{{ route('reports.index') }}" class="flex flex-wrap items-end gap-4 mb-6">
+        <div>
+            <label for="from" class="block mb-1">Dari</label>
+            <input
+                type="date"
+                id="from"
+                name="from"
+                value="{{ $from }}"
+                class="border rounded px-3 py-2"
+            >
+        </div>
 
-    <label class="block">
-        <span class="text-sm font-medium">Dari</span>
-        <input
-            type="date"
-            name="from"
-            value="{{ $from }}"
-            class="mt-1 block border rounded-md px-3 py-2 text-sm">
-    </label>
+        <div>
+            <label for="to" class="block mb-1">Sampai</label>
+            <input
+                type="date"
+                id="to"
+                name="to"
+                value="{{ $to }}"
+                class="border rounded px-3 py-2"
+            >
+        </div>
 
-    <label class="block">
-        <span class="text-sm font-medium">Sampai</span>
-        <input
-            type="date"
-            name="to"
-            value="{{ $to }}"
-            class="mt-1 block border rounded-md px-3 py-2 text-sm">
-    </label>
+        <button type="submit" class="bg-blue-600 text-white rounded px-4 py-2">
+            Filter
+        </button>
 
-    <button type="submit"
-        class="bg-slate-900 text-white px-4 py-2 rounded-md text-sm">
-        Filter
-    </button>
+        <a
+            href="{{ route('reports.export.csv', request()->query()) }}"
+            class="bg-green-600 text-white rounded px-4 py-2"
+        >
+            Export CSV
+        </a>
 
-    <a href="{{ route('reports.export.csv', ['from' => $from, 'to' => $to]) }}"
-        class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm">
-        Export CSV
-    </a>
-</form>
+        <a
+            href="{{ route('reports.export.xlsx', request()->query()) }}"
+            class="bg-emerald-700 text-white rounded px-4 py-2"
+        >
+            Export Excel
+        </a>
+    </form>
 
-<div class="bg-white border rounded-md p-4 max-w-sm">
-    <p class="text-sm text-slate-500">Total Penjualan</p>
-    <p class="text-2xl font-semibold">
-        Rp {{ number_format($totalPenjualan) }}
-    </p>
-    <p class="text-sm text-slate-500 mt-2">
-        {{ $jumlahTransaksi }} transaksi
-    </p>
-</div>
+    <div class="bg-white rounded shadow p-6">
+        <h2 class="text-lg font-semibold">Total Penjualan</h2>
+
+        <p class="text-2xl font-bold mt-2">
+            Rp {{ number_format($totalPenjualan) }}
+        </p>
+
+        <p class="text-gray-600 mt-1">
+            {{ $jumlahTransaksi }} transaksi
+        </p>
+    </div>
 @endsection
