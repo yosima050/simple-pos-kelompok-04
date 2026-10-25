@@ -1,3 +1,4 @@
+
 <?php
 
 use App\Http\Controllers\Auth\LoginController;
@@ -20,10 +21,10 @@ Route::post('/logout', [LoginController::class, 'destroy'])
     ->middleware('auth')
     ->name('logout');
 
-// Bungkus semua route yang mewajibkan login di dalam grup auth
+// Semua route yang mewajibkan login
 Route::middleware('auth')->group(function () {
-    
-    // Kasir POS (increment 2: routing & controller)
+
+    // Kasir POS
     Route::get('/pos', [TransactionController::class, 'create'])->name('pos.create');
     Route::post('/pos', [TransactionController::class, 'store'])->name('transactions.store');
     Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
@@ -33,7 +34,11 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:admin')->group(function () {
         Route::resource('categories', CategoryController::class)->except('show');
         Route::resource('products', ProductController::class)->except(['show', 'destroy']);
-        
+
         Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+
+        // Export laporan penjualan ke CSV
+        Route::get('/reports/export/csv', [ReportController::class, 'exportCsv'])
+            ->name('reports.export.csv');
     });
 });
