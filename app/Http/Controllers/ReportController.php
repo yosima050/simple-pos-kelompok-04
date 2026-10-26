@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Exports\SalesReportExport;
 use App\Models\Transaction;
+use App\Models\TransactionDetail;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -48,6 +50,41 @@ class ReportController extends Controller
             fclose($out);
         }, 'laporan-penjualan.csv');
     }
+
+    
+    public function exportPdf(Request $request)
+    {
+        [$from, $to] = $this->resolveDateRange($request);
+
+        $transactions = $this->filteredQuery($from, $to)
+            ->with('details.product')
+            ->orderByDesc('created_at')
+            ->limit(50)
+            ->get();
+
+        $topProducts = TransactionDetail::selectRaw('
+                products.name,
+                SUM(transaction_details.qty) as total_qty,
+                SUM(transaction_details.subtotal) as total_penjualan
+            ')
+            ->join('products', 'transaction_details.product_id', '=', 'products.id')
+            ->join('transactions', 'transaction_details.transaction_id', '=', 'transactions.id')
+            ->whereBetween('transactions.created_at', [$from, $to])
+            ->groupBy('products.id', 'products.name')
+            ->orderByDesc('total_qty')
+            ->limit(10)
+            ->get();
+
+        $pdf = Pdf::loadView('reports.pdf', [
+            'transactions' => $transactions,
+            'topProducts' => $topProducts,
+            'from' => $from->toDateString(),
+            'to' => $to->toDateString(),
+        ]);
+
+        return $pdf->download('laporan-penjualan.pdf');
+    }
+
 
     public function exportExcel(Request $request): BinaryFileResponse
     {

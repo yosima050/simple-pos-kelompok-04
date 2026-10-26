@@ -10,7 +10,14 @@ use App\Models\TransactionDetail;
 
 class Product extends Model
 {
-    protected $fillable = ['category_id', 'name', 'price', 'stock'];
+    protected $fillable = [
+    'category_id',
+    'name',
+    'price',
+    'stock',
+    'sku',
+    'is_active',
+];
 
     public function category(): BelongsTo
     {
