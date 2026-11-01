@@ -7,6 +7,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductImportController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\ProductExcelImportController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -47,6 +48,10 @@ Route::middleware('auth')->group(function () {
         // Impor produk dari CSV
         Route::post('/products/import', [ProductImportController::class, 'store'])
             ->name('products.import');
+
+        // Impor produk menggunakan Laravel Excel
+        Route::post('/products/import/excel', [ProductExcelImportController::class, 'store'])
+            ->name('products.import.excel');
 
         // Laporan penjualan
         Route::get('/reports', [ReportController::class, 'index'])
