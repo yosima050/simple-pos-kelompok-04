@@ -57,6 +57,23 @@
         Import CSV
     </button>
 </form>
+<form action="{{ route('products.import.excel') }}"
+      method="POST"
+      enctype="multipart/form-data"
+      class="flex flex-wrap items-center gap-3 mt-3">
+    @csrf
+
+    <input type="file"
+           name="file"
+           accept=".csv,.txt"
+           required
+           class="border rounded-md p-2">
+
+    <button type="submit"
+            class="bg-blue-600 text-white px-4 py-2 rounded-md">
+        Import Excel
+    </button>
+</form>
 </div>
 
 <table class="w-full text-left border-collapse">
