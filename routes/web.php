@@ -29,6 +29,8 @@ Route::post('/logout', [LoginController::class, 'destroy'])
     ->name('logout');
 
 Route::middleware('auth')->group(function () {
+
+    // Kasir POS
     Route::get('/pos', [TransactionController::class, 'create'])
         ->name('pos.create');
 
@@ -41,6 +43,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/transactions/{transaction}', [TransactionController::class, 'show'])
         ->name('transactions.show');
 
+    // Grup khusus Admin
     Route::middleware('role:admin')->group(function () {
         Route::resource('categories', CategoryController::class)
             ->except('show');
@@ -48,12 +51,14 @@ Route::middleware('auth')->group(function () {
         Route::resource('products', ProductController::class)
             ->except(['show', 'destroy']);
 
+        // Laporan penjualan
         Route::get('/reports', [ReportController::class, 'index'])
             ->name('reports.index');
 
         Route::get('/reports/export/csv', [ReportController::class, 'exportCsv'])
             ->name('reports.export.csv');
 
+        // Import produk CSV
         Route::get('/import', [ImportController::class, 'index'])
             ->name('imports.index');
 
