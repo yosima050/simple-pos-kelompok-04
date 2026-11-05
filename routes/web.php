@@ -5,13 +5,15 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ImportController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ProductExcelImportController;
+use App\Http\Controllers\ProductImportController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Route;
 
-Route::view('/', 'welcome')
-    ->middleware('guest')
-    ->name('welcome');
+Route::get('/', function () {
+    return redirect()->route('pos.create');
+});
 
 Route::get('/dashboard', DashboardController::class)
     ->name('dashboard');
@@ -51,14 +53,31 @@ Route::middleware('auth')->group(function () {
         Route::resource('products', ProductController::class)
             ->except(['show', 'destroy']);
 
+        // Impor produk dari CSV (Queue - Langkah 8)
+        Route::post('/products/import', [ProductImportController::class, 'store'])
+            ->name('products.import');
+
+        // Impor produk menggunakan Laravel Excel (Langkah 10 Nadia)
+        Route::post('/products/import/excel', [ProductExcelImportController::class, 'store'])
+            ->name('products.import.excel');
+
         // Laporan penjualan
         Route::get('/reports', [ReportController::class, 'index'])
             ->name('reports.index');
 
+        // Ekspor CSV
         Route::get('/reports/export/csv', [ReportController::class, 'exportCsv'])
             ->name('reports.export.csv');
 
-        // Import produk CSV
+        // Ekspor Excel
+        Route::get('/reports/export/xlsx', [ReportController::class, 'exportExcel'])
+            ->name('reports.export.xlsx');
+
+        // Ekspor PDF
+        Route::get('/reports/export/pdf', [ReportController::class, 'exportPdf'])
+            ->name('reports.export.pdf');
+
+        // Import produk CSV dengan tabel pencatatan error (Langkah 10 Sharon)
         Route::get('/import', [ImportController::class, 'index'])
             ->name('imports.index');
 
