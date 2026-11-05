@@ -126,3 +126,36 @@ Untuk mencegah manipulasi, total transaksi harus dihitung ulang di sisi server b
 **Status Pengujian:**
 
 - Belum diuji secara langsung karena akun demo manager belum tersedia pada `DemoUserSeeder` yang diperiksa.
+
+## Dokumentasi Praktikum Pertemuan 9: Import, Export, dan Queue
+
+### 1. Diskusi Kelompok: Pemilihan Format Export untuk 100.000 Transaksi
+Untuk laporan dengan skala **100.000 transaksi**, format yang paling tepat dipilih adalah **CSV (menggunakan `StreamedResponse` & `lazyById()`)**.
+
+**Alasan:**
+1. **Efisiensi Memori (Memory Footprint)**: Berbeda dengan format file terstruktur lainnya, data CSV dapat dialirkan baris demi baris secara streaming (`streamDownload` + `lazyById()`) langsung ke output buffer HTTP client. Server tidak perlu menampung seluruh 100.000 objek model ke dalam RAM, sehingga konsumsi memori tetap stabil dan tidak menabrak batas `memory_limit` PHP.
+2. **Keterbatasan Format Excel (.xlsx)**: Pembuatan file `.xlsx` dengan 100.000 baris memerlukan perakitan file ZIP berisi XML terkompresi (OpenXML). Proses ini membutuhkan alokasi CPU dan RAM yang sangat besar, serta rentan mengalami *out-of-memory* atau *HTTP request timeout* bila diproses secara sinkron.
+3. **Keterbatasan Format PDF**: DomPDF merender seluruh dokumen HTML menjadi representasi grafis di dalam memori sebelum menghasilkan berkas PDF. Men-generate ribuan halaman PDF sekaligus dari 100.000 transaksi hampir pasti memicu memory exhaustion (OOM) dan crash total. Oleh karena itu, ekspor PDF pada sistem ini sengaja dibatasi hanya untuk 50 transaksi terbaru.
+4. **Interoperabilitas**: File CSV mudah diproses lebih lanjut oleh database engine, data pipeline, maupun aplikasi spreadsheet untuk analisis lanjutan.
+
+---
+
+### 2. Perbandingan Import Produk: Manual (PHP Native) vs Laravel Excel (Tugas Mandiri - Nadia Minatul Salma)
+Berdasarkan implementasi import produk yang telah dibuat:
+- **Mana yang Lebih Ringkas?**
+  **Laravel Excel** lebih ringkas dalam hal struktur kode dasar. Dengan memanfaatkan antarmuka `ToModel`, `WithHeadingRow`, dan `WithChunkReading`, developer tidak perlu menulis fungsi manual parsing file (`fopen`, `fgetcsv`, `str_getcsv`, `fclose`), pembacaan baris pertama sebagai header (`array_shift`, `array_combine`), maupun pemecahan data ke dalam chunk. Semua abstraksi tersebut ditangani otomatis oleh library.
+- **Mana yang Lebih Mudah Dikontrol?**
+  **Versi Manual (PHP Native / Custom Queue)** jauh lebih mudah dikontrol secara fleksibel dan granular:
+  1. *Kontrol Encoding & Delimiter*: Penanganan masalah format CSV lokal (seperti titik koma `;`, pembersihan UTF-8 BOM, dan karakter khusus) dapat dilakukan langsung tanpa ketergantungan konfigurasi library.
+  2. *Pencatatan Error Baris-per-Baris*: Pada versi manual, developer dapat secara presisi melacak nomor baris (`$rowNumber`) dan pesan validasi spesifik ke database/tabel `import_errors` tanpa menghentikan iterasi baris lainnya.
+  3. *Integrasi Background Queue*: File CSV dapat langsung disimpan ke disk (`Storage::disk`), dan path-nya dikirim ke job antrean (`ProcessProductImport`) dengan payload pesan database yang sangat ringan, menjaga ketahanan aplikasi dan pemakaian resource server.
+
+---
+
+### 3. Identifikasi Proses Simple POS yang Layak Dipindah ke Queued Job (Tugas Mandiri - Yosep Bima Aprillian)
+- **Proses yang Diidentifikasi**: **Pengiriman Email Struk Transaksi Digital kepada Pelanggan (`SendReceiptEmailJob`)**.
+- **Alasan Pemilihan**:
+  1. **Mengeliminasi Bottleneck I/O Jaringan**: Komunikasi dengan server SMTP / mail provider eksternal (seperti Mailgun, Amazon SES, dsb.) membutuhkan waktu handshake dan transfer jaringan berkisar antara 1 hingga 3 detik. Jika proses ini dijalankan secara sinkron saat kasir menekan tombol pembayaran, kasir dan pembeli harus menunggu loading browser selesai, yang akan memperlambat antrean kasir.
+  2. **Pengalaman Pengguna (UX) yang Cepat**: Dengan memindahkan pengiriman email ke queued job, controller kasir dapat segera menyimpan data transaksi, mengurangi stok, mencetak struk fisik, dan seketika mengembalikan respons sukses ("Transaksi Berhasil") kepada kasir tanpa hambatan.
+  3. **Ketahanan terhadap Kegagalan (Fault Tolerance & Retry Mechanism)**: Layanan mail gateway rentan mengalami gangguan sementara (rate limit, timeout jaringan). Melalui konfigurasi queue dengan `$tries = 3` dan `$backoff = [10, 60]`, kegagalan pengiriman email tidak akan membatalkan transaksi keuangan yang sudah sah, melainkan akan otomatis dicoba kembali di latar belakang. Jika tetap gagal setelah batas percobaan, error akan tercatat di tabel `failed_jobs` sehingga dapat dipantau dan di-retry oleh teknisi sistem.
+
