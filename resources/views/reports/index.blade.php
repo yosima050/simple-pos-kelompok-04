@@ -1,4 +1,3 @@
-
 @extends('layouts.app')
 
 @section('title', 'Laporan Penjualan')
@@ -29,11 +28,27 @@
             >
         </div>
 
+        <div>
+            <label for="category_id" class="block mb-1">Kategori</label>
+            <select
+                id="category_id"
+                name="category_id"
+                class="border rounded px-3 py-2"
+            >
+                <option value="">Semua Kategori</option>
+                @foreach ($categories as $cat)
+                    <option value="{{ $cat->id }}" {{ (string) $selectedCategory === (string) $cat->id ? 'selected' : '' }}>
+                        {{ $cat->name }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+
         <button type="submit" class="bg-blue-600 text-white rounded px-4 py-2">
             Filter
         </button>
 
-         <a
+        <a
             href="{{ route('reports.export.csv', request()->query()) }}"
             style="display:inline-block; background:#15803d; color:white; border-radius:6px; padding:8px 16px; text-decoration:none;"
         >
@@ -53,7 +68,6 @@
         >
             Export PDF
         </a>
-
     </form>
 
     <div class="bg-white rounded shadow p-6">
