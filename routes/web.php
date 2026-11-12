@@ -7,6 +7,7 @@ use App\Http\Controllers\ImportController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductExcelImportController;
 use App\Http\Controllers\ProductImportController;
+use App\Http\Controllers\QuickCategoryController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Route;
@@ -83,5 +84,12 @@ Route::middleware('auth')->group(function () {
 
         Route::post('/import', [ImportController::class, 'store'])
             ->name('imports.store');
+
+        // Kategori cepat AJAX (Langkah 11 Yosep)
+        Route::get('/quick-categories', [QuickCategoryController::class, 'index'])
+            ->name('quick-categories.index');
+
+        Route::post('/quick-categories', [QuickCategoryController::class, 'store'])
+            ->name('quick-categories.store');
     });
 });
