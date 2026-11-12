@@ -16,7 +16,9 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'role' => \App\Http\Middleware\EnsureUserHasRole::class,
-            'idempotent' => \App\Http\Middleware\EnsureIdempotency::class, // <-- Tambahkan baris ini
+            'idempotent' => \App\Http\Middleware\EnsureIdempotency::class,
+            'abilities' => \Laravel\Sanctum\Http\Middleware\CheckAbilities::class,
+            'ability' => \Laravel\Sanctum\Http\Middleware\CheckForAnyAbility::class,
         ]);
         $middleware->redirectUsersTo('/pos');
     })
