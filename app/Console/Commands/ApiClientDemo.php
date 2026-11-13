@@ -10,10 +10,23 @@ use Illuminate\Support\Str;
 
 class ApiClientDemo extends Command
 {
-    protected $signature = 'api:demo';
+    /**
+     * The name and signature of the console command.
+     *
+     * @var string
+     */
+    protected $signature = 'api:demo {--fail-login : Simulasikan login gagal dengan kata sandi salah lalu berhenti}';
 
+    /**
+     * The console command description.
+     *
+     * @var string
+     */
     protected $description = 'Demonstrate consuming the Simple POS API as an external client';
 
+    /**
+     * Execute the console command.
+     */
     public function handle(): int
     {
         $baseUrl = 'http://127.0.0.1:8000';
@@ -22,6 +35,31 @@ class ApiClientDemo extends Command
             || in_array($e->response->status(), [429, 502, 503, 504]);
         $backoff = fn (int $attempt) => $attempt * 1000;
 
+        // Tantangan Mandiri Langkah 13: Coba login dengan kata sandi yang salah lebih dulu
+        if ($this->option('fail-login')) {
+            $this->warn('Mencoba login dengan kata sandi salah...');
+            $loginSalah = Http::acceptJson()->post("{$baseUrl}/api/login", [
+                'email' => 'kasir@pos.test',
+                'password' => 'passwordsalah',
+            ]);
+
+            if ($loginSalah->failed()) {
+                $this->error('Login gagal: '.$loginSalah->json('message'));
+                $this->line('Kode berhenti pada langkah pertama alih-alih melanjutkan dengan token kosong.');
+                return self::FAILURE;
+            }
+        }
+
+        // Coba login dengan kata sandi yang salah lebih dulu untuk mengamati penanganan kegagalan
+        $testWrong = Http::acceptJson()->post("{$baseUrl}/api/login", [
+            'email' => 'kasir@pos.test',
+            'password' => 'passwordsalah',
+        ]);
+        if ($testWrong->failed()) {
+            $this->warn('[Uji Kredensial Salah] Login gagal terdeteksi: '.$testWrong->json('message').' (status: '.$testWrong->status().')');
+        }
+
+        // Login dengan kredensial yang valid
         $login = Http::acceptJson()->post("{$baseUrl}/api/login", [
             'email' => 'kasir@pos.test',
             'password' => 'password',
