@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\Transaction;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -80,5 +81,30 @@ class ApiTransactionTest extends TestCase
         $this->getJson("/api/transactions/{$transaction->id}")
             ->assertOk()
             ->assertJsonPath('data.id', $transaction->id);
+    }
+
+    public function test_expired_token_cannot_create_transaction(): void
+    {
+        $user = User::factory()->create();
+
+        Carbon::setTestNow(Carbon::parse('2026-11-13 10:00:00'));
+
+        try {
+            $token = $user->createToken(
+                'test-expired-token',
+                ['transactions:create'],
+                now()->addDay()
+            )->plainTextToken;
+
+            Carbon::setTestNow(Carbon::parse('2026-11-15 10:00:00'));
+
+            $this->withHeader('Authorization', 'Bearer ' . $token)
+                ->postJson('/api/transactions', $this->payload(), [
+                    'Idempotency-Key' => 'expired-token',
+                ])
+                ->assertUnauthorized();
+        } finally {
+            Carbon::setTestNow();
+        }
     }
 }
