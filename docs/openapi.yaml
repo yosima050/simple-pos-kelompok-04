@@ -1,24 +1,28 @@
-
 openapi: 3.0.0
 
 info:
   title: Simple POS API
   version: 1.0.0
+  description: Dokumentasi REST API Simple POS dengan Laravel Sanctum, Idempotency, dan Policy.
 
 paths:
   /api/login:
     post:
       summary: Login dan dapatkan token
       requestBody:
+        required: true
         content:
           application/json:
             schema:
               type: object
+              required: [email, password]
               properties:
                 email:
                   type: string
+                  example: kasir@pos.test
                 password:
                   type: string
+                  example: password
       responses:
         '200':
           description: Token berhasil diterbitkan
@@ -38,15 +42,52 @@ paths:
                 properties:
                   message:
                     type: string
+        '429':
+          description: Terlalu banyak percobaan login (Rate limit)
 
   /api/products:
     get:
-      summary: Ambil daftar produk
+      summary: Ambil daftar produk (dengan paginasi, filter, dan sort)
       security:
         - bearerAuth: []
+      parameters:
+        - name: category_id
+          in: query
+          description: Filter produk berdasarkan ID kategori
+          required: false
+          schema:
+            type: integer
+            example: 1
+        - name: q
+          in: query
+          description: Pencarian nama produk (minimal 2 karakter)
+          required: false
+          schema:
+            type: string
+            minLength: 2
+            example: Kopi
+        - name: sort
+          in: query
+          description: Pengurutan data (name, -name, price, -price)
+          required: false
+          schema:
+            type: string
+            enum: [name, -name, price, -price]
+            default: name
+            example: -price
+        - name: per_page
+          in: query
+          description: Jumlah produk per halaman (maksimal 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 15
+            example: 10
       responses:
         '200':
-          description: Daftar produk
+          description: Daftar produk berpaginasi
           content:
             application/json:
               schema:
@@ -65,24 +106,65 @@ paths:
                           type: integer
                         category:
                           type: string
+                  links:
+                    type: object
+                    properties:
+                      first:
+                        type: string
+                      last:
+                        type: string
+                      prev:
+                        type: string
+                        nullable: true
+                      next:
+                        type: string
+                        nullable: true
+                  meta:
+                    type: object
+                    properties:
+                      current_page:
+                        type: integer
+                      from:
+                        type: integer
+                      last_page:
+                        type: integer
+                      per_page:
+                        type: integer
+                      to:
+                        type: integer
+                      total:
+                        type: integer
         '401':
           description: Token tidak ada atau tidak valid
+        '422':
+          description: Parameter query tidak valid (misal per_page > 100 atau sort di luar daftar putih)
 
   /api/transactions:
     post:
       summary: Buat transaksi baru
       security:
         - bearerAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          description: Kunci unik idempotensi transaksi (UUID)
+          required: true
+          schema:
+            type: string
+            example: 9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d
       requestBody:
+        required: true
         content:
           application/json:
             schema:
               type: object
+              required: [items]
               properties:
                 items:
                   type: array
                   items:
                     type: object
+                    required: [product_id, qty]
                     properties:
                       product_id:
                         type: integer
@@ -90,7 +172,13 @@ paths:
                         type: integer
       responses:
         '201':
-          description: Transaksi berhasil disimpan
+          description: Transaksi berhasil disimpan atau diputar ulang
+          headers:
+            Idempotent-Replayed:
+              description: Menandakan hasil lama diputar ulang karena key sama
+              schema:
+                type: string
+                example: "true"
           content:
             application/json:
               schema:
@@ -103,10 +191,53 @@ paths:
                         type: integer
                       total:
                         type: integer
+        '400':
+          description: Header Idempotency-Key wajib diisi
         '401':
           description: Token tidak ada atau tidak valid
+        '403':
+          description: Token tidak memiliki ability transactions:create
+        '409':
+          description: Request dengan key ini masih diproses
         '422':
-          description: Input tidak valid, misalnya product_id tidak ditemukan
+          description: Input tidak valid atau key sudah dipakai untuk request lain
+
+  /api/transactions/{transaction}:
+    get:
+      summary: Ambil detail transaksi
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: transaction
+          in: path
+          description: ID transaksi
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: Detail transaksi
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      total:
+                        type: integer
+                      created_at:
+                        type: string
+        '401':
+          description: Token tidak ada atau tidak valid
+        '403':
+          description: Kasir mencoba mengakses transaksi kasir lain (Policy)
+        '404':
+          description: Transaksi tidak ditemukan
 
 components:
   securitySchemes:
